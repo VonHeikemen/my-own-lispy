@@ -30,13 +30,13 @@ mpc_parser_t* Lispy;
 
 /* Possible lisp value types */
 enum {
-	LISP_VAL_ERR, 
-	LISP_VAL_NUM,
-	LISP_VAL_SYM,
+  LISP_VAL_ERR, 
+  LISP_VAL_NUM,
+  LISP_VAL_SYM,
   LISP_VAL_STR,
-	LISP_VAL_FN,
-	LISP_VAL_SEXPR,
-	LISP_VAL_QEXPR
+  LISP_VAL_FN,
+  LISP_VAL_SEXPR,
+  LISP_VAL_QEXPR
 };
 
 typedef lisp_val*(*lisp_builtin)(lisp_env*, lisp_val*);
@@ -45,20 +45,20 @@ struct lisp_val {
   int type;
 
   /* Basic */
-	long num;
+  long num;
   char* err;
   char* sym;
   char* str;
 
   /* Function */
-	lisp_builtin builtin;
+  lisp_builtin builtin;
   lisp_env* env;
   lisp_val* formals;
   lisp_val* body;
 
   /* Expression */
-	int count;
-	lisp_val** cell;
+  int count;
+  lisp_val** cell;
 };
 
 /* Possible error types */
@@ -83,32 +83,32 @@ lisp_val* lisp_err(char* fmt, ...) {
   lisp_val* v = malloc(sizeof(lisp_val));
   v->type = LISP_VAL_ERR;
 
-	/* Create a va list */
-	va_list va;
-	va_start(va, fmt);
+  /* Create a va list */
+  va_list va;
+  va_start(va, fmt);
 
-	/* Allocate 512 bytes for the message */
+  /* Allocate 512 bytes for the message */
   v->err = malloc(512);
 
-	/* print the error string with a max of 511 characters */
-	vsnprintf(v->err, 511, fmt, va);
+  /* print the error string with a max of 511 characters */
+  vsnprintf(v->err, 511, fmt, va);
 
-	/* Reallocate to number of bytes actually used */
-	v->err = realloc(v->err, strlen(v->err) + 1);
+  /* Reallocate to number of bytes actually used */
+  v->err = realloc(v->err, strlen(v->err) + 1);
 
-	/* Cleanup va list */
-	va_end(va);
+  /* Cleanup va list */
+  va_end(va);
 
   return v;
 }
 
 lisp_val* lisp_sym(char* str) {
-	lisp_val* v = malloc(sizeof(lisp_val));
-	v->type = LISP_VAL_SYM;
-	v->sym = malloc(strlen(str) + 1);
-	strcpy(v->sym, str);
+  lisp_val* v = malloc(sizeof(lisp_val));
+  v->type = LISP_VAL_SYM;
+  v->sym = malloc(strlen(str) + 1);
+  strcpy(v->sym, str);
 
-	return v;
+  return v;
 }
 
 lisp_val* lisp_str(char* str) {
@@ -121,29 +121,29 @@ lisp_val* lisp_str(char* str) {
 }
 
 lisp_val* lisp_fn(lisp_builtin fn) {
-	lisp_val* v = malloc(sizeof(lisp_val));
-	v->type = LISP_VAL_FN;
-	v->builtin = fn;
+  lisp_val* v = malloc(sizeof(lisp_val));
+  v->type = LISP_VAL_FN;
+  v->builtin = fn;
 
-	return v;
+  return v;
 }
 
 lisp_val* lisp_sexpr(void) {
-	lisp_val* v = malloc(sizeof(lisp_val));
-	v->type = LISP_VAL_SEXPR;
-	v->count = 0;
-	v->cell = NULL;
+  lisp_val* v = malloc(sizeof(lisp_val));
+  v->type = LISP_VAL_SEXPR;
+  v->count = 0;
+  v->cell = NULL;
 
-	return v;
+  return v;
 }
 
 lisp_val* lisp_qexpr(void) {
-	lisp_val* v = malloc(sizeof(lisp_val));
-	v->type = LISP_VAL_QEXPR;
-	v->count = 0;
-	v->cell = NULL;
+  lisp_val* v = malloc(sizeof(lisp_val));
+  v->type = LISP_VAL_QEXPR;
+  v->count = 0;
+  v->cell = NULL;
 
-	return v;
+  return v;
 }
 
 lisp_val* lisp_lambda(lisp_val* formals, lisp_val* body) {
@@ -160,12 +160,12 @@ lisp_val* lisp_lambda(lisp_val* formals, lisp_val* body) {
 
 /* lisp_val destructor */
 void lisp_del(lisp_val* v) {
-	switch(v->type) {
-		/* Do nothing */
-		case LISP_VAL_NUM: break;
+  switch(v->type) {
+    /* Do nothing */
+    case LISP_VAL_NUM: break;
 
     /* User defined functions */
-		case LISP_VAL_FN:
+    case LISP_VAL_FN:
       if(!v->builtin) {
         lisp_env_del(v->env);
         lisp_del(v->formals);
@@ -173,35 +173,35 @@ void lisp_del(lisp_val* v) {
       }
     break;
 
-		/* For error or symbol free the string data */
-		case LISP_VAL_ERR: free(v->err); break;
-		case LISP_VAL_SYM: free(v->sym); break;
-		case LISP_VAL_STR: free(v->str); break;
+    /* For error or symbol free the string data */
+    case LISP_VAL_ERR: free(v->err); break;
+    case LISP_VAL_SYM: free(v->sym); break;
+    case LISP_VAL_STR: free(v->str); break;
 
-		 /* Delete all elements inside the cell */
-		case LISP_VAL_QEXPR:
-		case LISP_VAL_SEXPR:
-			for(int i = 0; i < v->count; i++) {
-				lisp_del(v->cell[i]);
-			}
+     /* Delete all elements inside the cell */
+    case LISP_VAL_QEXPR:
+    case LISP_VAL_SEXPR:
+      for(int i = 0; i < v->count; i++) {
+        lisp_del(v->cell[i]);
+      }
 
-			/* Free the memory for the cell */
-			free(v->cell);
-		break;
-	}
-	
-	/* Free the memory for the struct itself */
-	free(v);
+      /* Free the memory for the cell */
+      free(v->cell);
+    break;
+  }
+  
+  /* Free the memory for the struct itself */
+  free(v);
 }
 
 /* Copy values */
 lisp_val* lisp_val_copy(lisp_val* v) {
-	lisp_val* target = malloc(sizeof(lisp_val));
-	target->type = v->type;
+  lisp_val* target = malloc(sizeof(lisp_val));
+  target->type = v->type;
 
-	switch(v->type) {
-		/* Copy functions and numbers directly */
-		case LISP_VAL_NUM: target->num = v->num; break;
+  switch(v->type) {
+    /* Copy functions and numbers directly */
+    case LISP_VAL_NUM: target->num = v->num; break;
 
     case LISP_VAL_FN:
       if(v->builtin) {
@@ -214,85 +214,85 @@ lisp_val* lisp_val_copy(lisp_val* v) {
       }
     break;
 
-		/* Copy strings */
-		case LISP_VAL_ERR:
-			target->err = malloc(strlen(v->err) + 1);
-			strcpy(target->err, v->err);
-		break;
+    /* Copy strings */
+    case LISP_VAL_ERR:
+      target->err = malloc(strlen(v->err) + 1);
+      strcpy(target->err, v->err);
+    break;
 
-		case LISP_VAL_SYM:
-			target->sym = malloc(strlen(v->sym) + 1);
-			strcpy(target->sym, v->sym);
-		break;
+    case LISP_VAL_SYM:
+      target->sym = malloc(strlen(v->sym) + 1);
+      strcpy(target->sym, v->sym);
+    break;
 
     case LISP_VAL_STR:
-			target->str = malloc(strlen(v->str) + 1);
-			strcpy(target->str, v->str);
-		break;
+      target->str = malloc(strlen(v->str) + 1);
+      strcpy(target->str, v->str);
+    break;
 
-		/* Copy lists */
-		case LISP_VAL_SEXPR:
-		case LISP_VAL_QEXPR:
-			target->count = v->count;
-			target->cell = malloc(sizeof(lisp_val*) * target->count);
-			for(int i = 0; i < target->count; i++) {
-				target->cell[i] = lisp_val_copy(v->cell[i]);
-			}
-		break;
-	}
+    /* Copy lists */
+    case LISP_VAL_SEXPR:
+    case LISP_VAL_QEXPR:
+      target->count = v->count;
+      target->cell = malloc(sizeof(lisp_val*) * target->count);
+      for(int i = 0; i < target->count; i++) {
+        target->cell[i] = lisp_val_copy(v->cell[i]);
+      }
+    break;
+  }
 
-	return target;
+  return target;
 }
 
 /* 
  * Utility functions 
  */
 lisp_val* lisp_add(lisp_val* v, lisp_val* x) {
-	v->count++;
-	v->cell = realloc(v->cell, sizeof(lisp_val*) * v->count);
-	v->cell[v->count - 1] = x;
+  v->count++;
+  v->cell = realloc(v->cell, sizeof(lisp_val*) * v->count);
+  v->cell[v->count - 1] = x;
 
-	return v;
+  return v;
 }
 
 lisp_val* lisp_pop(lisp_val* v, int index) {
-	/* Find the item a index */
-	lisp_val* item = v->cell[index];
+  /* Find the item a index */
+  lisp_val* item = v->cell[index];
 
-	/* Shift memory after the index over the top */
-	memmove(
-		&v->cell[index],
-		&v->cell[index + 1],
-		sizeof(lisp_val*) * (v->count - index - 1)
-	);
+  /* Shift memory after the index over the top */
+  memmove(
+    &v->cell[index],
+    &v->cell[index + 1],
+    sizeof(lisp_val*) * (v->count - index - 1)
+  );
 
-	/* Decrease the count of children in the list */
-	v->count--;
+  /* Decrease the count of children in the list */
+  v->count--;
 
-	/* Reallocate the memory used */
-	v->cell = realloc(v->cell, sizeof(lisp_val*) * v->count);
+  /* Reallocate the memory used */
+  v->cell = realloc(v->cell, sizeof(lisp_val*) * v->count);
 
-	return item;
+  return item;
 }
 
 lisp_val* lisp_take(lisp_val* v, int index) {
-	lisp_val* item = lisp_pop(v, index);
-	lisp_del(v);
+  lisp_val* item = lisp_pop(v, index);
+  lisp_del(v);
 
-	return item;
+  return item;
 }
 
 lisp_val* lisp_join(lisp_val* x, lisp_val* y) {
-	/* For each cell in 'y' add it to 'x' */
-	for(int i = 0; i < y->count; i ++) {
-		x = lisp_add(x, y->cell[i]);
-	}
+  /* For each cell in 'y' add it to 'x' */
+  for(int i = 0; i < y->count; i ++) {
+    x = lisp_add(x, y->cell[i]);
+  }
 
-	/* Delete the empty 'y' and return 'x' */
-	free(y->cell);
-	free(y);
+  /* Delete the empty 'y' and return 'x' */
+  free(y->cell);
+  free(y);
 
-	return x;
+  return x;
 }
 
 int lisp_eq(lisp_val* x, lisp_val* y) {
@@ -338,18 +338,18 @@ int lisp_eq(lisp_val* x, lisp_val* y) {
  * Print functions 
  */
 void print_expr(lisp_val* v, char open, char close) {
-	putchar(open);
+  putchar(open);
 
-	for(int i = 0; i < v->count; i++) {
-		print_val(v->cell[i]);
+  for(int i = 0; i < v->count; i++) {
+    print_val(v->cell[i]);
 
-		/* Don't print trailing space if last element */
-		if(i != (v->count - 1)) {
-			putchar(' ');
-		}
-	}
+    /* Don't print trailing space if last element */
+    if(i != (v->count - 1)) {
+      putchar(' ');
+    }
+  }
 
-	putchar(close);
+  putchar(close);
 }
 
 void print_str(lisp_val* v) {
@@ -369,7 +369,7 @@ void print_str(lisp_val* v) {
 
 void print_val(lisp_val* v) {
   switch(v->type) {
-		case LISP_VAL_FN:
+    case LISP_VAL_FN:
       if(v->builtin) {
         printf("<builtin>");
       } else {
@@ -385,44 +385,44 @@ void print_val(lisp_val* v) {
       printf("%li", v->num);
     break;
 
-		case LISP_VAL_ERR:
-			printf("Error: %s", v->err);
+    case LISP_VAL_ERR:
+      printf("Error: %s", v->err);
     break;
 
-		case LISP_VAL_SYM:
-			printf("%s", v->sym);
-		break;
+    case LISP_VAL_SYM:
+      printf("%s", v->sym);
+    break;
 
     case LISP_VAL_STR:
       print_str(v);
-		break;
+    break;
 
-		case LISP_VAL_SEXPR:
-			print_expr(v, '(', ')');
-		break;
+    case LISP_VAL_SEXPR:
+      print_expr(v, '(', ')');
+    break;
 
-		case LISP_VAL_QEXPR:
-			print_expr(v, '{', '}');
-		break;
+    case LISP_VAL_QEXPR:
+      print_expr(v, '{', '}');
+    break;
   }
 }
 
 void print_line(lisp_val* v) {
-	print_val(v);
-	putchar('\n');
+  print_val(v);
+  putchar('\n');
 }
 
 char* lisp_type_name(int t) {
-	switch(t) {
-		case LISP_VAL_FN: return "Function";
-		case LISP_VAL_NUM: return "Number";
-		case LISP_VAL_ERR: return "Error";
-		case LISP_VAL_SYM: return "Symbol";
-		case LISP_VAL_STR: return "String";
-		case LISP_VAL_SEXPR: return "S-Expression";
-		case LISP_VAL_QEXPR: return "Q-Expression";
-		default: return "Unknown";
-	}
+  switch(t) {
+    case LISP_VAL_FN: return "Function";
+    case LISP_VAL_NUM: return "Number";
+    case LISP_VAL_ERR: return "Error";
+    case LISP_VAL_SYM: return "Symbol";
+    case LISP_VAL_STR: return "String";
+    case LISP_VAL_SEXPR: return "S-Expression";
+    case LISP_VAL_QEXPR: return "Q-Expression";
+    default: return "Unknown";
+  }
 }
 
 /* 
@@ -430,75 +430,75 @@ char* lisp_type_name(int t) {
  */
 struct lisp_env {
   lisp_env* parent;
-	int count;
-	char** syms;
-	lisp_val** vals;
+  int count;
+  char** syms;
+  lisp_val** vals;
 };
 
 /* Constructor */
 lisp_env* lisp_env_new(void) {
-	lisp_env* env = malloc(sizeof(lisp_env));
+  lisp_env* env = malloc(sizeof(lisp_env));
   env->parent = NULL;
-	env->count = 0;
-	env->syms = NULL;
-	env->vals = NULL;
+  env->count = 0;
+  env->syms = NULL;
+  env->vals = NULL;
 
-	return env;
+  return env;
 }
 
 /* Destructor */
 void lisp_env_del(lisp_env* env) {
-	for(int i = 0; i < env->count; i++) {
-		free(env->syms[i]);
-		lisp_del(env->vals[i]);
-	}
-	free(env->syms);
-	free(env->vals);
-	free(env);
+  for(int i = 0; i < env->count; i++) {
+    free(env->syms[i]);
+    lisp_del(env->vals[i]);
+  }
+  free(env->syms);
+  free(env->vals);
+  free(env);
 }
 
 /* 
  * Env utilities 
  */
 lisp_val* lisp_env_get(lisp_env* env, lisp_val* key) {
-	/* Iterate over all items in the environment */
-	for(int i = 0; i < env->count; i++) {
-		/* Check it the stored string matches the symbol string */
-		/* if it does, return a copy of the value */
-		if(strcmp(env->syms[i], key->sym) == 0) {
-			return lisp_val_copy(env->vals[i]);
-		}
-	}
+  /* Iterate over all items in the environment */
+  for(int i = 0; i < env->count; i++) {
+    /* Check it the stored string matches the symbol string */
+    /* if it does, return a copy of the value */
+    if(strcmp(env->syms[i], key->sym) == 0) {
+      return lisp_val_copy(env->vals[i]);
+    }
+  }
 
-	/* If no symbol is found check in parent */
+  /* If no symbol is found check in parent */
   if(env->parent) {
     return lisp_env_get(env->parent, key);
   }
 
-	return lisp_err("Unbound symbol '%s'", key->sym);
+  return lisp_err("Unbound symbol '%s'", key->sym);
 }
 
 void lisp_env_put(lisp_env* env, lisp_val* key, lisp_val* val) {
-	/* Check if variable already exists */
-	for(int i = 0; i < env->count; i++) {
-		/* If variable is found replace the item with user supplied input */
-		if(strcmp(env->syms[i], key->sym) == 0) {
-			lisp_del(env->vals[i]);
-			env->vals[i] = lisp_val_copy(val);
+  /* Check if variable already exists */
+  for(int i = 0; i < env->count; i++) {
+    /* If variable is found replace the item with user supplied input */
+    if(strcmp(env->syms[i], key->sym) == 0) {
+      lisp_del(env->vals[i]);
+      env->vals[i] = lisp_val_copy(val);
 
-			return;
-		}
-	}
+      return;
+    }
+  }
 
-	/* If variable does not exists allocate space for new entry */
-	env->count++;
-	env->vals = realloc(env->vals, sizeof(lisp_val*) * env->count);
-	env->syms = realloc(env->syms, sizeof(char*) * env->count);
+  /* If variable does not exists allocate space for new entry */
+  env->count++;
+  env->vals = realloc(env->vals, sizeof(lisp_val*) * env->count);
+  env->syms = realloc(env->syms, sizeof(char*) * env->count);
 
-	/* Copy content of lisp_val and symbol into new location */
-	env->vals[env->count - 1] = lisp_val_copy(val);
-	env->syms[env->count - 1] = malloc(strlen(key->sym) + 1);
-	strcpy(env->syms[env->count - 1], key->sym);
+  /* Copy content of lisp_val and symbol into new location */
+  env->vals[env->count - 1] = lisp_val_copy(val);
+  env->syms[env->count - 1] = malloc(strlen(key->sym) + 1);
+  strcpy(env->syms[env->count - 1], key->sym);
 }
 
 void lisp_env_def(lisp_env* env, lisp_val* key, lisp_val* val) {
@@ -530,11 +530,11 @@ lisp_env* lisp_env_copy(lisp_env* env) {
  * Builtin functions 
  */
 #define LISP_ASSERT(args, condition, err_msg, ...) \
-	if(!(condition)) { \
-		lisp_val* err = lisp_err(err_msg, ##__VA_ARGS__); \
-		lisp_del(args); \
-		return err; \
-	}
+  if(!(condition)) { \
+    lisp_val* err = lisp_err(err_msg, ##__VA_ARGS__); \
+    lisp_del(args); \
+    return err; \
+  }
 
 #define LISP_ASSERT_TYPE(fun, args, index, expect) \
   LISP_ASSERT( \
@@ -570,122 +570,122 @@ lisp_env* lisp_env_copy(lisp_env* env) {
   )
 
 lisp_val* builtin_list(lisp_env* env, lisp_val* arg) {
-	arg->type = LISP_VAL_QEXPR;
+  arg->type = LISP_VAL_QEXPR;
 
-	return arg;
+  return arg;
 }
 
 lisp_val* builtin_head(lisp_env* env, lisp_val* arg) {
-	LISP_ASSERT_NUM("head", arg, 1);
-	LISP_ASSERT_TYPE("head", arg, 0, LISP_VAL_QEXPR);
-	LISP_ASSERT_NOT_EMPTY("head", arg, 0);
+  LISP_ASSERT_NUM("head", arg, 1);
+  LISP_ASSERT_TYPE("head", arg, 0, LISP_VAL_QEXPR);
+  LISP_ASSERT_NOT_EMPTY("head", arg, 0);
 
-	lisp_val* v = lisp_take(arg, 0);
-	while(v->count > 1) {
-		lisp_del(lisp_pop(v, 1));
-	}
+  lisp_val* v = lisp_take(arg, 0);
+  while(v->count > 1) {
+    lisp_del(lisp_pop(v, 1));
+  }
 
-	return v;
+  return v;
 }
 
 lisp_val* builtin_tail(lisp_env* env, lisp_val* arg) {
-	LISP_ASSERT_NUM("tail", arg, 1);
-	LISP_ASSERT_TYPE("tail", arg, 0, LISP_VAL_QEXPR);
-	LISP_ASSERT_NOT_EMPTY("tail", arg, 0);
+  LISP_ASSERT_NUM("tail", arg, 1);
+  LISP_ASSERT_TYPE("tail", arg, 0, LISP_VAL_QEXPR);
+  LISP_ASSERT_NOT_EMPTY("tail", arg, 0);
 
-	lisp_val* v = lisp_take(arg, 0);
-	lisp_del(lisp_pop(v, 0));
+  lisp_val* v = lisp_take(arg, 0);
+  lisp_del(lisp_pop(v, 0));
 
-	return v;
+  return v;
 }
 
 
 lisp_val* builtin_eval(lisp_env* env, lisp_val* arg) {
-	LISP_ASSERT_NUM("eval", arg, 1);
-	LISP_ASSERT_TYPE("eval", arg, 0, LISP_VAL_QEXPR);
+  LISP_ASSERT_NUM("eval", arg, 1);
+  LISP_ASSERT_TYPE("eval", arg, 0, LISP_VAL_QEXPR);
 
-	lisp_val* expr = lisp_take(arg, 0);
-	expr->type = LISP_VAL_SEXPR;
+  lisp_val* expr = lisp_take(arg, 0);
+  expr->type = LISP_VAL_SEXPR;
 
-	return lisp_eval(env, expr);
+  return lisp_eval(env, expr);
 }
 
 lisp_val* builtin_join(lisp_env* env, lisp_val* arg) {
-	for(int i = 0; i < arg->count; i++) {
-		LISP_ASSERT_TYPE("join", arg, i, LISP_VAL_QEXPR);
-	}
+  for(int i = 0; i < arg->count; i++) {
+    LISP_ASSERT_TYPE("join", arg, i, LISP_VAL_QEXPR);
+  }
 
-	lisp_val* expr = lisp_pop(arg, 0);
+  lisp_val* expr = lisp_pop(arg, 0);
 
-	while(arg->count) {
-		lisp_val* next = lisp_pop(arg, 0); 
-		expr = lisp_join(expr, next);
-	}
+  while(arg->count) {
+    lisp_val* next = lisp_pop(arg, 0); 
+    expr = lisp_join(expr, next);
+  }
 
-	lisp_del(arg);
+  lisp_del(arg);
 
-	return expr;
+  return expr;
 }
 
 lisp_val* builtin_op(lisp_env* env, lisp_val* input, char* op) {
-	/* Ensure all arguments are numbers */
-	for(int i = 0; i < input->count; i++) {
-		if(input->cell[i]->type != LISP_VAL_NUM) {
-			lisp_del(input);
-			return lisp_err("Cannot operate on non-number");
-		}
-	}
+  /* Ensure all arguments are numbers */
+  for(int i = 0; i < input->count; i++) {
+    if(input->cell[i]->type != LISP_VAL_NUM) {
+      lisp_del(input);
+      return lisp_err("Cannot operate on non-number");
+    }
+  }
 
-	/* Get the first element */
-	lisp_val* x = lisp_pop(input, 0); 
+  /* Get the first element */
+  lisp_val* x = lisp_pop(input, 0); 
 
-	/* If no arguments and sub then perform unary negation */
-	if((strcmp(op, "-") == 0) && input->count == 0) {
-		x->num = -x->num;
-	}
+  /* If no arguments and sub then perform unary negation */
+  if((strcmp(op, "-") == 0) && input->count == 0) {
+    x->num = -x->num;
+  }
 
-	while(input->count > 0) {
-		/* Pop the next element */
-		lisp_val* y = lisp_pop(input, 0);
+  while(input->count > 0) {
+    /* Pop the next element */
+    lisp_val* y = lisp_pop(input, 0);
 
-		/* Evaluate operator */
-		if(strcmp(op, "+") == 0) { x->num += y->num; }
-		if(strcmp(op, "-") == 0) { x->num -= y->num; }
-		if(strcmp(op, "*") == 0) { x->num *= y->num; }
-		if(strcmp(op, "/") == 0) {
-			if(y->num == 0) {
-				lisp_del(x);
-				lisp_del(y);
+    /* Evaluate operator */
+    if(strcmp(op, "+") == 0) { x->num += y->num; }
+    if(strcmp(op, "-") == 0) { x->num -= y->num; }
+    if(strcmp(op, "*") == 0) { x->num *= y->num; }
+    if(strcmp(op, "/") == 0) {
+      if(y->num == 0) {
+        lisp_del(x);
+        lisp_del(y);
 
-				x = lisp_err("Division by zero");
-				break;
-			} 
-			
-			x->num /= y->num; 
-		}
+        x = lisp_err("Division by zero");
+        break;
+      } 
+      
+      x->num /= y->num; 
+    }
 
-		lisp_del(y);
-	}
+    lisp_del(y);
+  }
 
-	lisp_del(input);
+  lisp_del(input);
 
-	return x;
+  return x;
 }
 
 lisp_val* builtin_add(lisp_env* env, lisp_val* arg) {
-	return builtin_op(env, arg, "+");
+  return builtin_op(env, arg, "+");
 }
 
 lisp_val* builtin_sub(lisp_env* env, lisp_val* arg) {
-	return builtin_op(env, arg, "-");
+  return builtin_op(env, arg, "-");
 }
 
 lisp_val* builtin_mul(lisp_env* env, lisp_val* arg) {
-	return builtin_op(env, arg, "*");
+  return builtin_op(env, arg, "*");
 }
 
 lisp_val* builtin_div(lisp_env* env, lisp_val* arg) {
-	return builtin_op(env, arg, "/");
+  return builtin_op(env, arg, "/");
 }
 
 lisp_val* builtin_lambda(lisp_env* env, lisp_val* arg) {
@@ -1049,47 +1049,47 @@ lisp_val* builtin_error(lisp_env* env, lisp_val* arg) {
 }
 
 void lisp_env_add_builtin(lisp_env* env, char* name, lisp_builtin fn) {
-	lisp_val* key = lisp_sym(name);
-	lisp_val* val = lisp_fn(fn);
-	lisp_env_put(env, key, val);
+  lisp_val* key = lisp_sym(name);
+  lisp_val* val = lisp_fn(fn);
+  lisp_env_put(env, key, val);
 
-	lisp_del(key);
-	lisp_del(val);
+  lisp_del(key);
+  lisp_del(val);
 }
 
 void lisp_env_add_builtins(lisp_env* env) {
-	/* Variable functions */
-	lisp_env_add_builtin(env, "def", builtin_def);
-	lisp_env_add_builtin(env, "=", builtin_put);
-	lisp_env_add_builtin(env, "->", builtin_lambda);
-	lisp_env_add_builtin(env, "fn", builtin_fun);
+  /* Variable functions */
+  lisp_env_add_builtin(env, "def", builtin_def);
+  lisp_env_add_builtin(env, "=", builtin_put);
+  lisp_env_add_builtin(env, "->", builtin_lambda);
+  lisp_env_add_builtin(env, "fn", builtin_fun);
 
-	/* List functions */
-	lisp_env_add_builtin(env, "list", builtin_list);
-	lisp_env_add_builtin(env, "head", builtin_head);
-	lisp_env_add_builtin(env, "tail", builtin_tail);
-	lisp_env_add_builtin(env, "eval", builtin_eval);
-	lisp_env_add_builtin(env, "join", builtin_join);
+  /* List functions */
+  lisp_env_add_builtin(env, "list", builtin_list);
+  lisp_env_add_builtin(env, "head", builtin_head);
+  lisp_env_add_builtin(env, "tail", builtin_tail);
+  lisp_env_add_builtin(env, "eval", builtin_eval);
+  lisp_env_add_builtin(env, "join", builtin_join);
 
-	/* Mathematical functions */
-	lisp_env_add_builtin(env, "+", builtin_add);
-	lisp_env_add_builtin(env, "-", builtin_sub);
-	lisp_env_add_builtin(env, "*", builtin_mul);
-	lisp_env_add_builtin(env, "/", builtin_div);
+  /* Mathematical functions */
+  lisp_env_add_builtin(env, "+", builtin_add);
+  lisp_env_add_builtin(env, "-", builtin_sub);
+  lisp_env_add_builtin(env, "*", builtin_mul);
+  lisp_env_add_builtin(env, "/", builtin_div);
 
   /* Comparison functions */
-	lisp_env_add_builtin(env, "if", builtin_if);
-	lisp_env_add_builtin(env, "==", builtin_eq);
-	lisp_env_add_builtin(env, "!=", builtin_ne);
-	lisp_env_add_builtin(env, ">", builtin_gt);
-	lisp_env_add_builtin(env, "<", builtin_lt);
-	lisp_env_add_builtin(env, ">=", builtin_gte);
-	lisp_env_add_builtin(env, "<=", builtin_lte);
+  lisp_env_add_builtin(env, "if", builtin_if);
+  lisp_env_add_builtin(env, "==", builtin_eq);
+  lisp_env_add_builtin(env, "!=", builtin_ne);
+  lisp_env_add_builtin(env, ">", builtin_gt);
+  lisp_env_add_builtin(env, "<", builtin_lt);
+  lisp_env_add_builtin(env, ">=", builtin_gte);
+  lisp_env_add_builtin(env, "<=", builtin_lte);
 
   /* String functions */
-	lisp_env_add_builtin(env, "load", builtin_load);
-	lisp_env_add_builtin(env, "error", builtin_error);
-	lisp_env_add_builtin(env, "print", builtin_print);
+  lisp_env_add_builtin(env, "load", builtin_load);
+  lisp_env_add_builtin(env, "error", builtin_error);
+  lisp_env_add_builtin(env, "print", builtin_print);
 }
 
 
@@ -1098,25 +1098,25 @@ void lisp_env_add_builtins(lisp_env* env) {
  */
 
 lisp_val* lisp_eval_sexpr(lisp_env* env, lisp_val* v) {
-	/* Evaluate children */
-	for(int i = 0; i < v->count; i++) {
-		v->cell[i] = lisp_eval(env, v->cell[i]);
-	}
+  /* Evaluate children */
+  for(int i = 0; i < v->count; i++) {
+    v->cell[i] = lisp_eval(env, v->cell[i]);
+  }
 
-	/* Error check */
-	for(int i = 0; i < v->count; i++) {
-		if(v->cell[i]->type == LISP_VAL_ERR) { return lisp_take(v, i); }
-	}
+  /* Error check */
+  for(int i = 0; i < v->count; i++) {
+    if(v->cell[i]->type == LISP_VAL_ERR) { return lisp_take(v, i); }
+  }
 
-	/* Empty expression */
-	if(v->count == 0) { return v; }
+  /* Empty expression */
+  if(v->count == 0) { return v; }
 
-	/* Single expression */
-	if(v->count == 1) { return lisp_take(v, 0); }
+  /* Single expression */
+  if(v->count == 1) { return lisp_take(v, 0); }
 
-	/* Ensure first element is a function after evaluation */
-	lisp_val* first = lisp_pop(v, 0);
-	if(first->type != LISP_VAL_FN) {
+  /* Ensure first element is a function after evaluation */
+  lisp_val* first = lisp_pop(v, 0);
+  if(first->type != LISP_VAL_FN) {
     lisp_val* err = lisp_err(
       "S-Expression starts with incorrect type. "
       "Got %s, expected %s.",
@@ -1124,43 +1124,43 @@ lisp_val* lisp_eval_sexpr(lisp_env* env, lisp_val* v) {
       lisp_type_name(LISP_VAL_FN)
     );
 
-		lisp_del(v);
-		lisp_del(first);
+    lisp_del(v);
+    lisp_del(first);
 
-		return err;
-	}
+    return err;
+  }
 
-	/* Call function to get result */
-	lisp_val* result = lisp_call(env, first, v);
-	lisp_del(first);
+  /* Call function to get result */
+  lisp_val* result = lisp_call(env, first, v);
+  lisp_del(first);
 
-	return result;
+  return result;
 }
 
 lisp_val* lisp_eval(lisp_env* env, lisp_val* v) {
-	if(v->type == LISP_VAL_SYM) {
-		lisp_val* x = lisp_env_get(env, v);
-		lisp_del(v);
-		return x;
-	}
+  if(v->type == LISP_VAL_SYM) {
+    lisp_val* x = lisp_env_get(env, v);
+    lisp_del(v);
+    return x;
+  }
 
-	/* Evaluate S-expressions */
-	if(v->type == LISP_VAL_SEXPR) { return lisp_eval_sexpr(env, v); }
+  /* Evaluate S-expressions */
+  if(v->type == LISP_VAL_SEXPR) { return lisp_eval_sexpr(env, v); }
 
-	/* All other lisp_val remain the same */
-	return v;
+  /* All other lisp_val remain the same */
+  return v;
 }
 
 /* 
  * Reading functions 
  */
 lisp_val* lisp_read_num(mpc_ast_t* t) {
-	errno = 0;
-	long x = strtol(t->contents, NULL, 10);
+  errno = 0;
+  long x = strtol(t->contents, NULL, 10);
 
-	return errno != ERANGE
-		? lisp_num(x)
-		: lisp_err("Invalid number");
+  return errno != ERANGE
+    ? lisp_num(x)
+    : lisp_err("Invalid number");
 }
 
 lisp_val* lisp_read_str(mpc_ast_t* t) {
@@ -1184,30 +1184,30 @@ lisp_val* lisp_read_str(mpc_ast_t* t) {
 }
 
 lisp_val* lisp_read(mpc_ast_t* t) {
-	/* If symbol or number return the conversion */
-	if(strstr(t->tag, "number")) { return lisp_read_num(t); }
+  /* If symbol or number return the conversion */
+  if(strstr(t->tag, "number")) { return lisp_read_num(t); }
   if(strstr(t->tag, "string")) { return lisp_read_str(t); }
-	if(strstr(t->tag, "symbol")) { return lisp_sym(t->contents); }
+  if(strstr(t->tag, "symbol")) { return lisp_sym(t->contents); }
 
-	/* If root (>) or sexpr then create empty list */
-	lisp_val* list = NULL;
-	if(strcmp(t->tag, ">") == 0) { list = lisp_sexpr(); }
-	if(strstr(t->tag, "sexpr")) { list = lisp_sexpr(); }
-	if(strstr(t->tag, "qexpr")) { list = lisp_qexpr(); }
+  /* If root (>) or sexpr then create empty list */
+  lisp_val* list = NULL;
+  if(strcmp(t->tag, ">") == 0) { list = lisp_sexpr(); }
+  if(strstr(t->tag, "sexpr")) { list = lisp_sexpr(); }
+  if(strstr(t->tag, "qexpr")) { list = lisp_qexpr(); }
 
-	/* Fill the list with any valid expression */
-	for(int i = 0; i < t->children_num; i++) {
-		if(strcmp(t->children[i]->contents, "(") == 0) { continue; }
-		if(strcmp(t->children[i]->contents, ")") == 0) { continue; }
-		if(strcmp(t->children[i]->contents, "{") == 0) { continue; }
-		if(strcmp(t->children[i]->contents, "}") == 0) { continue; }
-		if(strcmp(t->children[i]->tag, "regex") == 0) { continue; }
+  /* Fill the list with any valid expression */
+  for(int i = 0; i < t->children_num; i++) {
+    if(strcmp(t->children[i]->contents, "(") == 0) { continue; }
+    if(strcmp(t->children[i]->contents, ")") == 0) { continue; }
+    if(strcmp(t->children[i]->contents, "{") == 0) { continue; }
+    if(strcmp(t->children[i]->contents, "}") == 0) { continue; }
+    if(strcmp(t->children[i]->tag, "regex") == 0) { continue; }
     if(strstr(t->children[i]->tag, "comment")) { continue; }
 
-		list = lisp_add(list, lisp_read(t->children[i]));
-	}
+    list = lisp_add(list, lisp_read(t->children[i]));
+  }
 
-	return list;
+  return list;
 }
 
 int main(int argc, char** argv) {
@@ -1229,8 +1229,8 @@ int main(int argc, char** argv) {
       symbol  : /[a-zA-Z0-9_+\\-*\\/\\\\=<>!&]+/ ;        \
       string  : /\"(\\\\.|[^\"])*\"/ ;                    \
       comment : /;[^\\r\\n]*/ ;                           \
-			sexpr   : '(' <expr>* ')' ;                         \
-			qexpr   : '{' <expr>* '}' ;                         \
+      sexpr   : '(' <expr>* ')' ;                         \
+      qexpr   : '{' <expr>* '}' ;                         \
       expr    : <number>  | <symbol> | <string>           \
               | <comment> | <sexpr>  | <qexpr> ;          \
       lispy   : /^/ <expr>* /$/ ;                         \
@@ -1238,8 +1238,8 @@ int main(int argc, char** argv) {
     Number, Symbol, String, Comment, Sexpr, Qexpr, Expr, Lispy
   );
 
-	lisp_env* env = lisp_env_new();
-	lisp_env_add_builtins(env);
+  lisp_env* env = lisp_env_new();
+  lisp_env_add_builtins(env);
 
   /* Interactive prompt */
   if(argc == 1) {
@@ -1288,8 +1288,8 @@ int main(int argc, char** argv) {
     }
   }
 
-	/* Cleanup environment */
-	lisp_env_del(env);
+  /* Cleanup environment */
+  lisp_env_del(env);
 
   /* Cleanup parsers */
   mpc_cleanup(8,
